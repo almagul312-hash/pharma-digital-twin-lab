@@ -23,6 +23,7 @@ export function SiteShell({
         languageLabel={dictionary.language.label}
         languageRu={dictionary.language.ru}
         languageKk={dictionary.language.kk}
+        languageEn={dictionary.language.en}
         navLabel={dictionary.nav.main}
         mobileNavLabel={dictionary.nav.mobile}
         openMenuLabel={dictionary.nav.openMenu}

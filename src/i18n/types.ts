@@ -19,6 +19,7 @@ export type Dictionary = {
     label: string;
     ru: string;
     kk: string;
+    en: string;
   };
   nav: {
     main: string;

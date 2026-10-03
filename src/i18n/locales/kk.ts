@@ -16,6 +16,7 @@ export const kk: Dictionary = {
     label: "Тіл",
     ru: "RU",
     kk: "ҚАЗ",
+    en: "EN",
   },
   nav: {
     main: "Негізгі навигация",

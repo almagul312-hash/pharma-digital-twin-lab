@@ -25,6 +25,7 @@ type HeaderProps = {
   languageLabel: string;
   languageRu: string;
   languageKk: string;
+  languageEn: string;
   navLabel: string;
   mobileNavLabel: string;
   openMenuLabel: string;
@@ -99,16 +100,19 @@ function LanguageSwitcher({
   languageLabel,
   languageRu,
   languageKk,
+  languageEn,
 }: {
   locale: Locale;
   pathname: string;
   languageLabel: string;
   languageRu: string;
   languageKk: string;
+  languageEn: string;
 }) {
   const options = [
     { locale: "ru" as const, label: languageRu, hrefLang: "ru" },
     { locale: "kk" as const, label: languageKk, hrefLang: "kk" },
+    { locale: "en" as const, label: languageEn, hrefLang: "en" },
   ];
 
   return (
@@ -153,6 +157,7 @@ export function Header({
   languageLabel,
   languageRu,
   languageKk,
+  languageEn,
   navLabel,
   mobileNavLabel,
   openMenuLabel,
@@ -213,6 +218,7 @@ export function Header({
               languageLabel={languageLabel}
               languageRu={languageRu}
               languageKk={languageKk}
+              languageEn={languageEn}
             />
             <button
               type="button"

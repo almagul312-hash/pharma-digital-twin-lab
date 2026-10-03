@@ -1,4 +1,4 @@
-export const locales = ["ru", "kk"] as const;
+export const locales = ["ru", "kk", "en"] as const;
 
 export type Locale = (typeof locales)[number];
 
@@ -9,7 +9,7 @@ export const localeCookieName = "locale";
 export const localeHeaderName = "x-locale";
 
 export function isLocale(value: string): value is Locale {
-  return value === "ru" || value === "kk";
+  return (locales as readonly string[]).includes(value);
 }
 
 export function withLocale(locale: Locale, href: string) {
