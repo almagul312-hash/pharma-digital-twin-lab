@@ -193,6 +193,9 @@ export type Dictionary = {
     projectsTitle: string;
     projectDetails: string;
     tabletsTitle: string;
+    tabletsLead: string;
+    tabletsPoints: string[];
+    tabletsStatus: string;
     capsulesTitle: string;
   };
   about: {

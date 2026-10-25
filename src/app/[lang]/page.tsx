@@ -54,6 +54,9 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
         detailsLabel={dictionary.home.projectDetails}
         startLabel={dictionary.lab.start}
         tabletsTitle={dictionary.home.tabletsTitle}
+        tabletsLead={dictionary.home.tabletsLead}
+        tabletsPoints={dictionary.home.tabletsPoints}
+        tabletsStatus={dictionary.home.tabletsStatus}
         capsulesTitle={dictionary.home.capsulesTitle}
       />
     </div>

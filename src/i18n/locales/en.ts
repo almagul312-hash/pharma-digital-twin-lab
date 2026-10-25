@@ -64,6 +64,15 @@ export const en: Dictionary = {
     projectsTitle: "Digital twin projects",
     projectDetails: "Learn more",
     tabletsTitle: "Production of tablet dosage forms",
+    tabletsLead:
+      "A teaching tableting laboratory: from material receipt to compression, quality tests and a series report.",
+    tabletsPoints: [
+      "Direct compression and wet granulation",
+      "A floor plan and ordinary control forms",
+      "Weighing, mixing and a mass balance",
+      "A press, teaching tests and a series report",
+    ],
+    tabletsStatus: "Teaching module",
     capsulesTitle: "Capsule filling of dosage forms",
   },
   about: {

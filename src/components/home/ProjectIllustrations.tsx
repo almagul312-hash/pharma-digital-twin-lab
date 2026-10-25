@@ -2,35 +2,32 @@ export function TabletIllustration() {
   return (
     <svg viewBox="0 0 640 300" className="h-full w-full" aria-hidden="true">
       <rect width="640" height="300" fill="#e7f4fb" />
-      <g fill="none" stroke="#0b3a6a" strokeWidth="3" opacity="0.38">
-        <path d="M430 28h96l-20 62h-56z" />
-        <path d="M458 18h40" strokeLinecap="round" />
-        <path d="M478 90v46" />
-        <rect x="462" y="132" width="32" height="16" rx="3" />
-        <path d="M390 176h176" />
-        <circle cx="478" cy="176" r="18" />
-        <path d="M478 194v42" />
-        <path d="M418 24v236M538 24v236M418 24h120" />
-      </g>
       <g>
-        <ellipse cx="168" cy="214" rx="34" ry="10" fill="#c5d7e6" opacity="0.7" />
-        <circle cx="168" cy="196" r="34" fill="#f7fbfe" stroke="#0b3a6a" strokeWidth="3" />
-        <ellipse cx="248" cy="236" rx="28" ry="8" fill="#c5d7e6" opacity="0.65" />
-        <circle cx="248" cy="222" r="28" fill="#ffffff" stroke="#3aa0c8" strokeWidth="3" />
-        <ellipse cx="118" cy="248" rx="22" ry="7" fill="#c5d7e6" opacity="0.6" />
-        <circle cx="118" cy="236" r="22" fill="#f7fbfe" stroke="#0e7c74" strokeWidth="3" />
-        <ellipse cx="214" cy="168" rx="42" ry="12" fill="#b7cce0" opacity="0.75" />
+        <ellipse cx="132" cy="214" rx="34" ry="10" fill="#c5d7e6" />
+        <circle cx="132" cy="196" r="34" fill="#f7fbfe" stroke="#0b3a6a" strokeWidth="3" />
+        <ellipse cx="214" cy="168" rx="42" ry="12" fill="#b7cce0" />
         <circle cx="214" cy="146" r="42" fill="#ffffff" stroke="#0b3a6a" strokeWidth="3.5" />
         <path d="M182 146h64" stroke="#3aa0c8" strokeWidth="3" strokeLinecap="round" />
-        <path d="M196 140c8 8 24 8 36 0" stroke="#d7e4ee" strokeWidth="3" strokeLinecap="round" />
+        <ellipse cx="86" cy="244" rx="20" ry="6" fill="#c5d7e6" />
+        <circle cx="86" cy="232" r="20" fill="#f7fbfe" stroke="#0e7c74" strokeWidth="3" />
       </g>
-      <g fill="#7ec8e3" stroke="#0b3a6a" strokeWidth="1.6">
-        <circle cx="330" cy="214" r="7" />
-        <circle cx="348" cy="228" r="5" />
-        <circle cx="322" cy="232" r="4" />
-        <circle cx="360" cy="214" r="4.5" />
-        <circle cx="338" cy="242" r="3.5" />
-        <circle cx="312" cy="224" r="3" />
+      <g fill="none" stroke="#0b3a6a" strokeWidth="3" strokeLinejoin="round">
+        <path d="M390 36h150l-28 58H418z" fill="#f7fbfe" />
+        <path d="M448 18h34" strokeLinecap="round" />
+        <path d="M465 94v28" />
+        <rect x="430" y="122" width="150" height="18" rx="4" fill="#d7eef6" />
+        <circle cx="470" cy="168" r="46" fill="#ffffff" />
+        <circle cx="470" cy="168" r="16" fill="#e7f4fb" />
+        <path d="M470 122v-8M470 214v8M424 168h-8M516 168h8" strokeLinecap="round" />
+        <rect x="454" y="214" width="32" height="36" rx="3" fill="#ffffff" />
+        <path d="M454 250h32l18 22H436z" fill="#f7fbfe" />
+        <path d="M390 272h176" strokeLinecap="round" />
+      </g>
+      <g fill="#f7fbfe" stroke="#0e7c74" strokeWidth="2">
+        <circle cx="430" cy="258" r="8" />
+        <circle cx="452" cy="262" r="8" />
+        <circle cx="474" cy="258" r="8" />
+        <circle cx="496" cy="262" r="8" />
       </g>
     </svg>
   );

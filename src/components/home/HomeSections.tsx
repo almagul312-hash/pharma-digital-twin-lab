@@ -67,6 +67,9 @@ export function HomeProjectsSection({
   detailsLabel,
   startLabel,
   tabletsTitle,
+  tabletsLead,
+  tabletsPoints,
+  tabletsStatus,
   capsulesTitle,
 }: {
   locale: Locale;
@@ -75,6 +78,9 @@ export function HomeProjectsSection({
   detailsLabel: string;
   startLabel: string;
   tabletsTitle: string;
+  tabletsLead: string;
+  tabletsPoints: string[];
+  tabletsStatus: string;
   capsulesTitle: string;
 }) {
   const cards = [
@@ -102,28 +108,37 @@ export function HomeProjectsSection({
             >
               <div className="h-64 sm:h-72">{card.illustration}</div>
               <div className="flex flex-1 flex-col p-6 sm:p-8">
-                <StatusBadge status={status} />
+                <StatusBadge status={card.slug === "tablets" ? tabletsStatus : status} />
                 <h3 className="mt-4 text-2xl font-semibold leading-snug text-navy">
                   {card.title}
                 </h3>
+                {card.slug === "tablets" ? (
+                  <>
+                    <p className="mt-3 leading-relaxed">{tabletsLead}</p>
+                    <ul className="mt-4 space-y-2 text-sm leading-relaxed">
+                      {tabletsPoints.map((point) => (
+                        <li key={point}>{point}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
                 <div className="mt-6 flex flex-wrap gap-3">
-                  {card.slug === "capsules" ? (
-                    <Link
-                      href={withLocale(locale, "/digital-twins/capsules?start=1")}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-                    >
-                      <PlayIcon />
-                      {startLabel}
-                    </Link>
-                  ) : null}
+                  <Link
+                    href={withLocale(
+                      locale,
+                      card.slug === "capsules"
+                        ? "/digital-twins/capsules?start=1"
+                        : "/digital-twins/tablets?start=1",
+                    )}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                  >
+                    <PlayIcon />
+                    {startLabel}
+                  </Link>
                   <Link
                     href={withLocale(locale, `/digital-twins/${card.slug}`)}
                     aria-label={detailsLabel}
-                    className={
-                      card.slug === "capsules"
-                        ? "inline-flex items-center justify-center rounded-lg border border-navy px-5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-                        : "inline-flex items-center justify-center rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-                    }
+                    className="inline-flex items-center justify-center rounded-lg border border-navy px-5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                   >
                     {detailsLabel}
                   </Link>

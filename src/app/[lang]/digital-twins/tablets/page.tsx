@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ProjectView } from "@/components/ProjectView";
+import { TabletingExperience } from "@/components/tableting/TabletingExperience";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionary";
 
@@ -23,25 +23,26 @@ export async function generateMetadata({
 
 export default async function TabletsProjectPage({
   params,
+  searchParams,
 }: PageProps<"/[lang]/digital-twins/tablets">) {
   const { lang } = await params;
+  const query = await searchParams;
 
   if (!isLocale(lang)) {
     notFound();
   }
 
   const dictionary = getDictionary(lang);
+  const start = query.start;
+  const initialWorkspace = start === "1" || (Array.isArray(start) && start.includes("1"));
 
   return (
-    <ProjectView
+    <TabletingExperience
+      initialWorkspace={initialWorkspace}
       locale={lang}
-      project={dictionary.projects.tablets}
-      status={dictionary.projects.status}
+      title={dictionary.projects.tablets.title}
+      description={dictionary.projects.tablets.description}
       backLabel={dictionary.projects.back}
-      structureTitle={dictionary.projects.structureTitle}
-      structureText={dictionary.projects.structureText}
-      stagesTitle={dictionary.projects.stagesTitle}
-      comingSoon={dictionary.common.comingSoon}
     />
   );
 }
