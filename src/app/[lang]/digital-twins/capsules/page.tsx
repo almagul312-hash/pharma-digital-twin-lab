@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ProjectView } from "@/components/ProjectView";
+import { CapsulesExperience } from "@/components/capsules/CapsulesExperience";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionary";
 
@@ -23,25 +23,28 @@ export async function generateMetadata({
 
 export default async function CapsulesProjectPage({
   params,
+  searchParams,
 }: PageProps<"/[lang]/digital-twins/capsules">) {
   const { lang } = await params;
+  const query = await searchParams;
 
   if (!isLocale(lang)) {
     notFound();
   }
 
   const dictionary = getDictionary(lang);
+  const start = query.start;
+  const initialWorkspace = start === "1" || (Array.isArray(start) && start.includes("1"));
 
   return (
-    <ProjectView
+    <CapsulesExperience
+      initialWorkspace={initialWorkspace}
       locale={lang}
       project={dictionary.projects.capsules}
       status={dictionary.projects.status}
       backLabel={dictionary.projects.back}
-      structureTitle={dictionary.projects.structureTitle}
-      structureText={dictionary.projects.structureText}
       stagesTitle={dictionary.projects.stagesTitle}
-      comingSoon={dictionary.common.comingSoon}
+      lab={dictionary.lab}
     />
   );
 }

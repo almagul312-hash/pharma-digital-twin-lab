@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Container } from "@/components/Container";
 import {
@@ -109,6 +109,7 @@ function LanguageSwitcher({
   languageKk: string;
   languageEn: string;
 }) {
+  const router = useRouter();
   const options = [
     { locale: "ru" as const, label: languageRu, hrefLang: "ru" },
     { locale: "kk" as const, label: languageKk, hrefLang: "kk" },
@@ -133,7 +134,15 @@ function LanguageSwitcher({
                 hrefLang={option.hrefLang}
                 prefetch={false}
                 aria-current={active ? "true" : undefined}
-                onClick={() => rememberLocale(option.locale)}
+                onClick={(event) => {
+                  rememberLocale(option.locale);
+                  const search = window.location.search;
+                  if (!search) {
+                    return;
+                  }
+                  event.preventDefault();
+                  router.push(`${replaceLocale(pathname, option.locale)}${search}`);
+                }}
                 className={
                   active
                     ? "rounded-md bg-navy px-2.5 py-1 text-white"

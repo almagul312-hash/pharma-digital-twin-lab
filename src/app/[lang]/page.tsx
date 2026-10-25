@@ -52,6 +52,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
         title={dictionary.home.projectsTitle}
         status={dictionary.projects.status}
         detailsLabel={dictionary.home.projectDetails}
+        startLabel={dictionary.lab.start}
         tabletsTitle={dictionary.home.tabletsTitle}
         capsulesTitle={dictionary.home.capsulesTitle}
       />

@@ -1,3 +1,4 @@
+import { labEn } from "@/i18n/labCopy";
 import type { Dictionary } from "@/i18n/types";
 
 export const en: Dictionary = {
@@ -151,4 +152,5 @@ export const en: Dictionary = {
     text: "This page does not exist on the demonstration site.",
     action: "Back to home",
   },
+  lab: labEn,
 };

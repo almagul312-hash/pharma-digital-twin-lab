@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Container } from "@/components/Container";
 import { InfoBlock } from "@/components/InfoBlock";
@@ -15,6 +16,7 @@ export function ProjectView({
   structureText,
   stagesTitle,
   comingSoon,
+  action,
 }: {
   locale: Locale;
   project: ProjectCopy;
@@ -24,6 +26,7 @@ export function ProjectView({
   structureText: string;
   stagesTitle: string;
   comingSoon: string;
+  action?: ReactNode;
 }) {
   return (
     <div className="py-12 sm:py-16">
@@ -43,6 +46,7 @@ export function ProjectView({
         <p className="mt-4 max-w-3xl text-lg leading-relaxed">
           {project.description}
         </p>
+        {action ? <div className="mt-8">{action}</div> : null}
         <div className="mt-10">
           <InfoBlock title={structureTitle}>
             <p>{structureText}</p>

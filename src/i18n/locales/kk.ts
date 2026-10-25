@@ -1,3 +1,4 @@
+import { labKk } from "@/i18n/labCopy";
 import type { Dictionary } from "@/i18n/types";
 
 export const kk: Dictionary = {
@@ -151,4 +152,5 @@ export const kk: Dictionary = {
     text: "Демонстрациялық сайтта мұндай бет жоқ.",
     action: "Басты бетке",
   },
+  lab: labKk,
 };

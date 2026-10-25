@@ -65,6 +65,7 @@ export function HomeProjectsSection({
   title,
   status,
   detailsLabel,
+  startLabel,
   tabletsTitle,
   capsulesTitle,
 }: {
@@ -72,6 +73,7 @@ export function HomeProjectsSection({
   title: string;
   status: string;
   detailsLabel: string;
+  startLabel: string;
   tabletsTitle: string;
   capsulesTitle: string;
 }) {
@@ -104,18 +106,41 @@ export function HomeProjectsSection({
                 <h3 className="mt-4 text-2xl font-semibold leading-snug text-navy">
                   {card.title}
                 </h3>
-                <Link
-                  href={withLocale(locale, `/digital-twins/${card.slug}`)}
-                  aria-label={detailsLabel}
-                  className="mt-6 inline-flex w-fit items-center justify-center rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-                >
-                  {detailsLabel}
-                </Link>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {card.slug === "capsules" ? (
+                    <Link
+                      href={withLocale(locale, "/digital-twins/capsules?start=1")}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                    >
+                      <PlayIcon />
+                      {startLabel}
+                    </Link>
+                  ) : null}
+                  <Link
+                    href={withLocale(locale, `/digital-twins/${card.slug}`)}
+                    aria-label={detailsLabel}
+                    className={
+                      card.slug === "capsules"
+                        ? "inline-flex items-center justify-center rounded-lg border border-navy px-5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                        : "inline-flex items-center justify-center rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                    }
+                  >
+                    {detailsLabel}
+                  </Link>
+                </div>
               </div>
             </article>
           ))}
         </div>
       </Container>
     </section>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+      <path d="M8 5v14l11-7z" />
+    </svg>
   );
 }
