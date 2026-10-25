@@ -42,7 +42,7 @@ export function modelQc(input: {
         summary: `defects ${defects} / 100 (model)`,
         measured: { visual_defects_per_100: defects },
         criterion: "Training: no major defects in the inspected model sample.",
-        conclusion: defects <= 5 ? "pass" : "fail",
+        conclusion: "informational",
       };
     }
     case "average_mass": {
@@ -51,8 +51,8 @@ export function modelQc(input: {
         ...base,
         summary: `${avg} mg (model)`,
         measured: { average_mg: avg, theoretical_fill_mg: fill },
-        criterion: "Model average mass versus density×volume fill. Pharmacopoeial limits require the official monograph.",
-        conclusion: Math.abs(avg - fill) / fill <= 0.1 ? "pass" : "fail",
+        criterion: "Model average mass versus density×volume fill. No conformity decision: the monograph limit is not loaded.",
+        conclusion: "informational",
       };
     }
     case "mass_variation": {
@@ -61,8 +61,8 @@ export function modelQc(input: {
         ...base,
         summary: `RSD ${rsd}% (model)`,
         measured: { rsd_percent: rsd },
-        criterion: "Model RSD. Official uniformity of mass / dosage units follows the applicable pharmacopoeia.",
-        conclusion: rsd <= 6 ? "pass" : "fail",
+        criterion: "Model RSD. No conformity decision without the applicable pharmacopoeial method.",
+        conclusion: "informational",
       };
     }
     case "uniformity": {
@@ -71,8 +71,8 @@ export function modelQc(input: {
         ...base,
         summary: `AV ${av} (model)`,
         measured: { acceptance_value: av, api_percent: api },
-        criterion: "Model acceptance value. Not Ph. Eur. 2.9.40 computation on real units.",
-        conclusion: av <= 15 ? "pass" : "fail",
+        criterion: "Model acceptance value. Not a Ph. Eur. 2.9.40 decision.",
+        conclusion: "informational",
       };
     }
     case "disintegration": {
@@ -81,8 +81,8 @@ export function modelQc(input: {
         ...base,
         summary: `${min} min (model)`,
         measured: { disintegration_min: min },
-        criterion: "Model disintegration time. Official apparatus and limits are pharmacopoeial.",
-        conclusion: min <= 30 ? "pass" : "fail",
+        criterion: "Model disintegration time. Not a pharmacopoeial pass/fail; hardness is not reported for capsules.",
+        conclusion: "informational",
       };
     }
     case "dissolution": {
@@ -91,8 +91,8 @@ export function modelQc(input: {
         ...base,
         summary: `${pct}% @ 45 min (model)`,
         measured: { dissolved_percent: pct },
-        criterion: "Model dissolution profile. Not a biowaiver or specification result.",
-        conclusion: pct >= 75 ? "pass" : "fail",
+        criterion: "Model dissolution value. Not a specification result.",
+        conclusion: "informational",
       };
     }
     case "assay": {
@@ -101,8 +101,8 @@ export function modelQc(input: {
         ...base,
         summary: `${assay}% (model)`,
         measured: { assay_percent: assay },
-        criterion: "Model assay from lot composition. Not a validated HPLC assay.",
-        conclusion: assay >= 90 && assay <= 110 ? "pass" : "fail",
+        criterion: "Model assay from lot composition. Not a validated HPLC assay and not a release decision.",
+        conclusion: "informational",
       };
     }
     case "identity_ir": {

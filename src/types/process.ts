@@ -292,4 +292,4 @@ export type ActionResult = {
   notice: Omit<Notice, "id" | "at">;
 };
 
-export type GraphicsQuality = "high" | "low";
+export type GraphicsQuality = "high" | "balanced" | "low";

@@ -53,6 +53,19 @@ export function EquipmentConsole({ copy, locale }: { copy: SimCopy; locale: Loca
             {model.manufacturer} · {model.scale} · {model.specStatus}
           </p>
           <p className="mt-2 text-xs leading-relaxed text-muted">{model.notes[locale]}</p>
+          <ul className="mt-2 space-y-1 text-[11px] text-muted">
+            {model.sources.map((source) => (
+              <li key={source.text}>
+                {source.url ? (
+                  <a className="underline" href={source.url} target="_blank" rel="noreferrer">
+                    {source.text}
+                  </a>
+                ) : (
+                  source.text
+                )}
+              </li>
+            ))}
+          </ul>
           {machine ? (
             <div className="mt-3">
               <p className="text-sm">
@@ -85,11 +98,20 @@ export function EquipmentConsole({ copy, locale }: { copy: SimCopy; locale: Loca
             <ParamField label={copy.minutes} value={machine?.params.minutes ?? 8} onChange={(value) => setMachineParam("minutes", value)} />
           ) : null}
           {model.category === "dryer" ? (
-            <ParamField
-              label={`${copy.temperature}${model.temperatureC ? ` (${model.temperatureC.min}–${model.temperatureC.max} °C)` : ""}`}
-              value={machine?.params.temperature ?? 50}
-              onChange={(value) => setMachineParam("temperature", value)}
-            />
+            <>
+              <ParamField
+                label={`${copy.temperature}${model.temperatureC ? ` (${model.temperatureC.min}–${model.temperatureC.max} °C)` : ""}`}
+                value={machine?.params.temperature ?? 50}
+                onChange={(value) => setMachineParam("temperature", value)}
+              />
+              <button
+                type="button"
+                className={`${primary} mt-2`}
+                onClick={() => setMachineParam("door", machine?.params.door === 1 ? 0 : 1)}
+              >
+                {copy.door}: {machine?.params.door === 1 ? "open" : "closed"}
+              </button>
+            </>
           ) : null}
           <p className="mt-2 text-[11px] leading-relaxed text-muted">{copy.timeScale}</p>
           <div className="mt-3 flex flex-wrap gap-2">

@@ -39,7 +39,11 @@ export type SimCopy = {
   grabHint: string;
   quality: string;
   qualityHigh: string;
+  qualityBalanced: string;
   qualityLow: string;
+  physicsDebug: string;
+  door: string;
+  solventRemoved: string;
   balance: string;
   input: string;
   powder: string;
@@ -54,7 +58,7 @@ export type SimCopy = {
 };
 
 const ru: SimCopy = {
-  sessionOnly: "Данные только в текущей сессии. Не GMP-запись.",
+  sessionOnly: "Учебная партия хранится в localStorage этого браузера. Это не облачная база и не GMP-запись.",
   modelData: "МОДЕЛЬНЫЕ ДАННЫЕ",
   routeA: "Прямое смешивание",
   routeB: "Влажная грануляция",
@@ -92,8 +96,12 @@ const ru: SimCopy = {
   grabHint:
     "Перетащите контейнер мышью на чашку весов или в аппарат. На телефоне: выберите объект, затем зону загрузки. Стрелки — сдвиг, Enter — положить.",
   quality: "Графика",
-  qualityHigh: "Обычная",
-  qualityLow: "Упрощённая",
+  qualityHigh: "Высокая",
+  qualityBalanced: "Обычная",
+  qualityLow: "Облегчённая",
+  physicsDebug: "Коллайдеры",
+  door: "Дверца шкафа",
+  solventRemoved: "Снятый растворитель (модель сушки)",
   balance: "Материальный баланс",
   input: "По рецептуре",
   powder: "Порошки / смеси",
@@ -126,7 +134,7 @@ const ru: SimCopy = {
 
 const en: SimCopy = {
   ...ru,
-  sessionOnly: "Session-only data. Not a GMP record.",
+  sessionOnly: "Saved in this browser's localStorage. Not a cloud database and not a GMP record.",
   modelData: "MODEL DATA",
   routeA: "Direct blend",
   routeB: "Wet granulation",
@@ -164,8 +172,12 @@ const en: SimCopy = {
   grabHint:
     "Drag a container onto the balance pan or machine. On a phone, select the object then a drop zone. Arrow keys move, Enter drops.",
   quality: "Graphics",
-  qualityHigh: "Full",
-  qualityLow: "Reduced",
+  qualityHigh: "High",
+  qualityBalanced: "Balanced",
+  qualityLow: "Light",
+  physicsDebug: "Colliders",
+  door: "Cabinet door",
+  solventRemoved: "Solvent removed (drying model)",
   balance: "Mass balance",
   input: "Formula input",
   powder: "Powders / blends",
@@ -198,7 +210,7 @@ const en: SimCopy = {
 
 const kk: SimCopy = {
   ...ru,
-  sessionOnly: "Тек осы сессия деректері. GMP жазбасы емес.",
+  sessionOnly: "Деректер осы браузердің localStorage ішінде. Бұлттық база емес және GMP жазбасы емес.",
   modelData: "МОДЕЛЬДІК ДЕРЕКТЕР",
   routeA: "Тікелей араластыру",
   routeB: "Ылғал түйіршіктеу",
@@ -235,8 +247,12 @@ const kk: SimCopy = {
   runQc: "Сынақ",
   grabHint: "Контейнерді таразыға немесе аппаратқа сүйреңіз.",
   quality: "Графика",
-  qualityHigh: "Толық",
+  qualityHigh: "Жоғары",
+  qualityBalanced: "Теңгерімді",
   qualityLow: "Жеңіл",
+  physicsDebug: "Коллайдерлер",
+  door: "Шкаф есігі",
+  solventRemoved: "Алынған еріткіш (кептіру моделі)",
   balance: "Материалдық баланс",
   input: "Рецептура",
   powder: "Ұнтақтар",

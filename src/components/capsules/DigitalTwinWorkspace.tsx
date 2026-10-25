@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Boxes, ClipboardList, Cog, GitBranch, Layers } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Container } from "@/components/Container";
 import { EquipmentConsole } from "@/components/capsules/EquipmentConsole";
 import { MaterialsDock } from "@/components/capsules/MaterialsDock";
@@ -14,7 +14,7 @@ import { DropZoneButtons, useKeyboardMove } from "@/components/capsules/scene/in
 import { getSimCopy } from "@/i18n/simCopy";
 import type { Locale } from "@/i18n/config";
 import type { LabCopy } from "@/i18n/types";
-import { useLabStore } from "@/store/useLabStore";
+import { saveTrainingSnapshot, useLabStore } from "@/store/useLabStore";
 
 export function DigitalTwinWorkspace({
   copy,
@@ -31,14 +31,46 @@ export function DigitalTwinWorkspace({
   const tick = useLabStore((state) => state.tick);
   const graphics = useLabStore((state) => state.graphics);
   const setGraphics = useLabStore((state) => state.setGraphics);
+  const physicsDebug = useLabStore((state) => state.physicsDebug);
+  const setPhysicsDebug = useLabStore((state) => state.setPhysicsDebug);
   const latest = useLabStore((state) => state.auditLog[0]);
   const sim = getSimCopy(locale);
+  const [ready, setReady] = useState(false);
   useKeyboardMove();
+
+  useEffect(() => {
+    let active = true;
+    const finish = () => {
+      if (active) {
+        setReady(true);
+      }
+    };
+    try {
+      const pending = useLabStore.persist.rehydrate();
+      if (pending && typeof pending.then === "function") {
+        void pending.finally(finish);
+      } else {
+        finish();
+      }
+    } catch {
+      finish();
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => tick(), 1000);
     return () => window.clearInterval(id);
   }, [tick]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      void saveTrainingSnapshot();
+    }, 8000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const panels = [
     { id: "process" as const, label: sim.process, icon: GitBranch },
@@ -47,6 +79,14 @@ export function DigitalTwinWorkspace({
     { id: "equipment" as const, label: sim.equipment, icon: Cog },
     { id: "log" as const, label: sim.log, icon: ClipboardList },
   ];
+
+  if (!ready) {
+    return (
+      <div className="bg-surface pb-16">
+        <Container className="py-10 text-sm text-muted">{copy.canvasLoading}</Container>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-surface pb-16">
@@ -63,10 +103,21 @@ export function DigitalTwinWorkspace({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setGraphics(graphics === "high" ? "low" : "high")}
+                onClick={() => {
+                  const order = ["high", "balanced", "low"] as const;
+                  const next = order[(Math.max(0, order.indexOf(graphics)) + 1) % order.length];
+                  setGraphics(next);
+                }}
                 className="rounded-lg border border-navy px-3 py-2 text-sm font-semibold text-navy transition hover:bg-surface active:scale-[0.98]"
               >
-                {sim.quality}: {graphics === "high" ? sim.qualityHigh : sim.qualityLow}
+                {sim.quality}: {graphics === "high" ? sim.qualityHigh : graphics === "balanced" ? sim.qualityBalanced : sim.qualityLow}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPhysicsDebug(!physicsDebug)}
+                className="rounded-lg border border-navy px-3 py-2 text-sm font-semibold text-navy transition hover:bg-surface active:scale-[0.98]"
+              >
+                {sim.physicsDebug}: {physicsDebug ? "on" : "off"}
               </button>
               <button
                 type="button"

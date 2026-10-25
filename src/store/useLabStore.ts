@@ -1,25 +1,32 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { equipmentById } from "@/data/equipmentCatalog";
 import { exampleRecipes } from "@/data/recipes";
 import { operationById } from "@/data/operations";
 import { defaultEquipment, defaultRecipe, idleMachine, seedLots, seedTools, type ToolPlace } from "@/data/seed";
 import { massBalance, weighedLineCoverage } from "@/lib/balance";
-import { capsuleYield } from "@/lib/capsuleFill";
+import { capsuleYield, encapsulateBlend } from "@/lib/capsuleFill";
+import { stepDrying } from "@/lib/drying";
 import { canStartOperation, explainBlock, wallSecondsForProcess } from "@/lib/processGraph";
 import {
   apiPercent,
   canMerge,
-  compositionOf,
   lotMass,
   mergeLots,
+  shellMass,
+  solidsMass,
+  solventMass,
   splitLot,
   weightedDensity,
   weightedMoisture,
 } from "@/lib/materials";
+import { placeWithoutOverlap } from "@/lib/placement";
 import { modelQc, qcApplicable } from "@/lib/qcModel";
 import { cloneRecipe, scaleRecipe } from "@/lib/recipeMath";
+import { zoneSlots } from "@/lib/sceneSlots";
 import { roundTo } from "@/lib/formatLab";
 import { buildChromatogram, buildFtir, buildUv } from "@/lib/labSignals";
+import { localRepository } from "@/lib/storage/localRepository";
 import type {
   ActionResult,
   AuditRecord,
@@ -45,6 +52,7 @@ type LabState = {
   route: RouteId;
   zone: ZoneId;
   graphics: GraphicsQuality;
+  physicsDebug: boolean;
   recipe: Recipe;
   lots: MaterialLot[];
   selectedLotId: string | null;
@@ -63,6 +71,7 @@ type LabState = {
   setZone: (zone: ZoneId) => void;
   setPanel: (panel: LabState["panel"]) => void;
   setGraphics: (graphics: GraphicsQuality) => void;
+  setPhysicsDebug: (enabled: boolean) => void;
   setRoute: (route: RouteId) => void;
   loadRecipe: (id: string) => void;
   setCapsuleCount: (count: number) => void;
@@ -140,7 +149,9 @@ function machineFor(state: LabState, catalogId: string) {
 const initialRecipe = defaultRecipe();
 const initialAt = "2026-10-25T08:00:00.000Z";
 
-export const useLabStore = create<LabState>((set, get) => {
+export const useLabStore = create<LabState>()(
+  persist(
+    (set, get) => {
   const push = (entry: Omit<AuditRecord, "id" | "at">) => {
     const record: AuditRecord = { ...entry, id: nid("log"), at: now() };
     set((state) => ({ auditLog: [record, ...state.auditLog].slice(0, 400) }));
@@ -166,6 +177,7 @@ export const useLabStore = create<LabState>((set, get) => {
     route: "direct_blend",
     zone: "warehouse",
     graphics: "high",
+    physicsDebug: false,
     recipe: initialRecipe,
     lots: seedLots(initialRecipe, initialAt),
     selectedLotId: "lot-l1",
@@ -179,7 +191,7 @@ export const useLabStore = create<LabState>((set, get) => {
       [defaultEquipment.mill]: idleMachine(defaultEquipment.mill),
       [defaultEquipment.sieve]: idleMachine(defaultEquipment.sieve, { meshMm: 1 }),
       [defaultEquipment.granulator]: idleMachine(defaultEquipment.granulator, { rpm: 250 }),
-      [defaultEquipment.dryer]: idleMachine(defaultEquipment.dryer, { temperature: 50 }),
+      [defaultEquipment.dryer]: idleMachine(defaultEquipment.dryer, { temperature: 50, minutes: 10, door: 0 }),
       [defaultEquipment.encapsulator]: idleMachine(defaultEquipment.encapsulator, { speed: 6 }),
       [defaultEquipment.deduster]: idleMachine(defaultEquipment.deduster),
       [defaultEquipment.qc]: idleMachine(defaultEquipment.qc),
@@ -195,7 +207,7 @@ export const useLabStore = create<LabState>((set, get) => {
         kind: "info",
         title: "Учебная сессия",
         detail:
-          "Данные существуют только в текущей сессии браузера. Журнал не является GMP-записью с электронной подписью.",
+          "Данные этой учебной партии сохраняются в localStorage браузера и восстанавливаются после перезагрузки. Это не облачная база и не GMP-запись.",
         at: initialAt,
       },
     ],
@@ -203,6 +215,7 @@ export const useLabStore = create<LabState>((set, get) => {
     setZone: (zone) => set({ zone }),
     setPanel: (panel) => set({ panel }),
     setGraphics: (graphics) => set({ graphics }),
+    setPhysicsDebug: (physicsDebug) => set({ physicsDebug }),
     setRoute: (route) => {
       const recipe = structuredClone(exampleRecipes.find((item) => item.route === route) ?? exampleRecipes[0]);
       set({
@@ -283,23 +296,32 @@ export const useLabStore = create<LabState>((set, get) => {
     },
     grab: (id) => set({ heldId: id, selectedLotId: id, selectedToolId: null }),
     moveHeld: (x, z) => {
-      const id = get().heldId;
+      const state = get();
+      const id = state.heldId;
       if (!id) {
         return;
       }
       if (id.startsWith("tool:")) {
         const toolId = id.slice(5) as ToolId;
-        set((state) => ({
-          tools: state.tools.map((tool) =>
-            tool.id === toolId ? { ...tool, zone: state.zone, x, z } : tool,
+        const blockers = tableBlockers(state, id);
+        const next = placeWithoutOverlap(x, z, 0.1, blockers);
+        set((current) => ({
+          tools: current.tools.map((tool) =>
+            tool.id === toolId ? { ...tool, zone: current.zone, x: next.x, z: next.z } : tool,
           ),
         }));
         return;
       }
-      set((state) => ({
-        lots: patchLot(state.lots, id, (lot) => ({
-          ...lot,
-          place: { kind: "table", zone: state.zone, x, z },
+      const lot = state.lots.find((item) => item.id === id);
+      if (!lot || lot.place.kind === "equipment") {
+        return;
+      }
+      const blockers = tableBlockers(state, id);
+      const next = placeWithoutOverlap(x, z, 0.16, blockers);
+      set((current) => ({
+        lots: patchLot(current.lots, id, (item) => ({
+          ...item,
+          place: { kind: "table", zone: current.zone, x: next.x, z: next.z },
         })),
       }));
     },
@@ -319,6 +341,11 @@ export const useLabStore = create<LabState>((set, get) => {
               Math.hypot(lot.place.x - place.x, lot.place.z - place.z) < 0.28,
           );
           if (nearby && (toolId === "spatula" || toolId === "scoop")) {
+            if (nearby.kind === "capsules" || nearby.kind === "rejected" || nearby.kind === "binder_solution") {
+              set({ heldId: null, selectedToolId: toolId });
+              applyResult(fail("Инструмент", "Шпатель и совок переносят сыпучий порошок, не капсулы и не раствор."));
+              return;
+            }
             set({ heldId: null, selectedLotId: nearby.id, selectedToolId: toolId });
             get().splitSelected(Math.min(0.5, lotMass(nearby) / 4));
             return;
@@ -465,6 +492,12 @@ export const useLabStore = create<LabState>((set, get) => {
           warning = `Обороты ограничены ${model.speedRpm.min}–${model.speedRpm.max} об/мин.`;
         }
       }
+      if (key === "door") {
+        if (model?.category !== "dryer") {
+          return applyResult(fail("Дверца", "У этого аппарата нет дверцы шкафа."));
+        }
+        next = value >= 0.5 ? 1 : 0;
+      }
       if (key === "minutes") {
         next = Math.min(120, Math.max(1, value));
       }
@@ -575,6 +608,13 @@ export const useLabStore = create<LabState>((set, get) => {
       if (!model || !lot) {
         return applyResult(fail("Загрузка", "Нет материала или аппарата."));
       }
+      const machine = machineFor(get(), equipmentId);
+      if (machine.phase === "running" || machine.phase === "paused") {
+        return applyResult(fail("Аппарат занят", "Нельзя загружать работающий или приостановленный аппарат."));
+      }
+      if (model.category === "dryer" && machine.params.door !== 1) {
+        return applyResult(fail("Дверца закрыта", "Откройте дверцу сушильного шкафа. Закрытый шкаф не принимает загрузку."));
+      }
       if (model.category === "deduster" && lot.kind !== "capsules") {
         return applyResult(fail("Обеспыливатель", "Принимает только наполненные капсулы."));
       }
@@ -626,7 +666,8 @@ export const useLabStore = create<LabState>((set, get) => {
       if (machine.phase === "running") {
         return applyResult(fail("Аппарат занят", "Дождитесь завершения или поставьте на паузу. Повторный пуск не дублирует журнал."));
       }
-      const duration = wallSecondsForProcess(machine.params.minutes, op.durationHintSec);
+      const processMinutes = id === "dry" ? (machine.params.minutes ?? 10) : machine.params.minutes;
+      const duration = wallSecondsForProcess(processMinutes, op.durationHintSec);
       const loaded = machine.loadedLotIds.length > 0 ? machine.loadedLotIds : [];
       if (op.equipment.length > 0 && loaded.length === 0) {
         return applyResult(fail("Нет загрузки", "Поместите материал в аппарат (перетащите на зону загрузки)."));
@@ -635,38 +676,20 @@ export const useLabStore = create<LabState>((set, get) => {
       const loadedMass = state.lots.filter((lot) => loaded.includes(lot.id)).reduce((sum, lot) => sum + lotMass(lot), 0);
       const capG = model?.capacityG ?? (model?.capacityL ? model.capacityL * 500 * ((model.workingLoadPercent?.max ?? 100) / 100) : undefined);
       if (capG && loadedMass > capG) {
-        return applyResult(fail("Перегруз аппарата", `Загрузка ${loadedMass.toFixed(1)} г выше рабочей вместимости ~${capG.toFixed(0)} г (${model?.modelName}).`));
+        return applyResult(
+          fail(
+            "Перегруз аппарата",
+            model?.capacityG
+              ? `Загрузка ${loadedMass.toFixed(1)} г выше предела ${capG.toFixed(0)} г (${model.modelName}).`
+              : `Загрузка ${loadedMass.toFixed(1)} г выше учебной оценки ${capG.toFixed(0)} г (объём × 0,5 г/см³ × доля загрузки). Это не паспортная масса загрузки.`,
+          ),
+        );
       }
       if (id === "encapsulate" && model?.capsuleSizes && !model.capsuleSizes.includes(state.recipe.capsuleSize)) {
         return applyResult(fail("Типоразмер", `Аппарат не заявлен для капсул размера ${state.recipe.capsuleSize}. Выберите другой капсулятор.`));
       }
       if (id === "dry" && model?.category === "desiccator") {
         return applyResult(fail("Сушка", "Эксикатор не заменяет сушильный шкаф."));
-      }
-
-      if (id === "sieve" || id === "mill") {
-        const kind: LotKind = id === "sieve" ? "sieved" : "milled";
-        const lots = state.lots.map((lot) =>
-          loaded.includes(lot.id)
-            ? { ...lot, kind, history: [...lot.history, { at: now(), action: id, detail: catalogId }] }
-            : lot,
-        );
-        completeOp(id, lots, {
-          machines: {
-            ...state.machines,
-            [catalogId]: { ...machine, phase: "completed", progress: 1, loadedLotIds: loaded },
-          },
-        });
-        push({
-          zone: op.zone,
-          operationId: id,
-          equipmentId: catalogId,
-          action: id,
-          fromState: "weighed",
-          toState: kind,
-          summary: op.title.ru,
-        });
-        return applyResult(ok(op.title.ru, "Состояние материала изменено."));
       }
 
       if (id === "pack") {
@@ -695,6 +718,10 @@ export const useLabStore = create<LabState>((set, get) => {
             elapsedSec: 0,
             durationSec: duration,
             loadedLotIds: loaded,
+            params: {
+              ...machine.params,
+              ...(id === "dry" ? { minutes: processMinutes, door: 0 } : {}),
+            },
             actual: { ...machine.actual, temperature: machine.actual.temperature ?? 25 },
           },
         },
@@ -880,15 +907,40 @@ export const useLabStore = create<LabState>((set, get) => {
           const progress = machine.durationSec > 0 ? Math.min(1, elapsed / machine.durationSec) : 1;
           const actual = { ...machine.actual };
           const model = equipmentById(id);
-          if (model?.category === "dryer") {
+          if (model?.category === "dryer" && state.activeOpId === "dry") {
             const target = machine.params.temperature ?? 50;
-            actual.temperature = roundTo(actual.temperature ? actual.temperature + (target - actual.temperature) * 0.2 : 25, 1);
+            actual.temperature = roundTo(
+              (actual.temperature ?? 25) + (target - (actual.temperature ?? 25)) * 0.2,
+              1,
+            );
+            const minutes = machine.params.minutes ?? 10;
+            const dtMin = machine.durationSec > 0 ? minutes / machine.durationSec : 0;
+            const mode = id.includes("vacuum") ? "vacuum" : "cabinet";
             lots = lots.map((lot) => {
               if (!machine.loadedLotIds.includes(lot.id)) {
                 return lot;
               }
-              const nextMoisture = roundTo(Math.max(state.recipe.targetLodPercent ?? 1.5, lot.moisturePercent - 0.15), 2);
-              return { ...lot, moisturePercent: nextMoisture };
+              const solids = solidsMass(lot.components);
+              const solvent = solventMass(lot.components);
+              if (solids <= 0 || solvent <= 0) {
+                return lot;
+              }
+              const stepped = stepDrying({
+                solventG: solvent,
+                solidsG: solids,
+                processMinutes: dtMin,
+                temperatureC: actual.temperature,
+                targetMoisturePercent: state.recipe.targetLodPercent ?? 2,
+                mode,
+              });
+              const scale = solvent > 0 ? stepped.solventG / solvent : 1;
+              const components = lot.components.map((part) =>
+                part.substanceId === "water" || part.role === "wetting"
+                  ? { ...part, massG: roundTo(part.massG * scale, 4) }
+                  : part,
+              );
+              const massG = roundTo(components.reduce((sum, part) => sum + part.massG, 0), 4);
+              return { ...lot, components, massG, moisturePercent: stepped.moisturePercent };
             });
           }
           machines[id] = { ...machine, elapsedSec: elapsed, progress, actual };
@@ -899,6 +951,19 @@ export const useLabStore = create<LabState>((set, get) => {
             completed = finished.completed;
             activeOpId = finished.activeOpId;
             machines[id] = finished.machine;
+            if (finished.summary) {
+              push({
+                zone: state.zone,
+                operationId: state.activeOpId ?? undefined,
+                equipmentId: id,
+                action: "complete",
+                fromState: "running",
+                toState: finished.machine.phase,
+                result: finished.summary,
+                warning: finished.machine.phase === "error" ? finished.summary : undefined,
+                summary: finished.summary,
+              });
+            }
           }
         } else if (machine.phase !== "idle" && machine.actual.temperature && machine.actual.temperature > 26) {
           machines[id] = {
@@ -917,7 +982,63 @@ export const useLabStore = create<LabState>((set, get) => {
       }
     },
   };
-});
+    },
+    {
+      name: "pharma-lab-session",
+      version: 1,
+      skipHydration: true,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        route: state.route,
+        zone: state.zone,
+        graphics: state.graphics,
+        physicsDebug: state.physicsDebug,
+        recipe: state.recipe,
+        lots: state.lots,
+        selectedLotId: state.selectedLotId,
+        equipmentChoice: state.equipmentChoice,
+        machines: state.machines,
+        completed: state.completed,
+        auditLog: state.auditLog,
+        qcRuns: state.qcRuns,
+      }),
+    },
+  ),
+);
+
+function tableBlockers(state: LabState, ignoreId: string) {
+  const blockers: { x: number; z: number; radius: number }[] = zoneSlots[state.zone].map((slot) => ({
+    x: slot.x,
+    z: slot.z,
+    radius: slot.category === "dryer" ? 0.55 : slot.category === "qc" ? 0.32 : 0.38,
+  }));
+  for (const lot of state.lots) {
+    if (lot.id === ignoreId || lot.place.kind !== "table" || lot.place.zone !== state.zone) {
+      continue;
+    }
+    blockers.push({ x: lot.place.x, z: lot.place.z, radius: 0.16 });
+  }
+  for (const tool of state.tools) {
+    if (ignoreId === `tool:${tool.id}` || tool.zone !== state.zone) {
+      continue;
+    }
+    blockers.push({ x: tool.x, z: tool.z, radius: 0.1 });
+  }
+  return blockers;
+}
+
+export function saveTrainingSnapshot() {
+  const state = useLabStore.getState();
+  return localRepository.save({
+    route: state.route,
+    recipe: state.recipe,
+    lots: state.lots,
+    completed: state.completed,
+    equipmentChoice: state.equipmentChoice,
+    auditLog: state.auditLog,
+    qcRuns: state.qcRuns,
+  });
+}
 
 function finishMachine(
   catalogId: string,
@@ -953,6 +1074,15 @@ function finishMachine(
     }
   }
 
+  if (opId === "sieve" || opId === "mill" || opId === "wet_screen") {
+    const kind: LotKind = opId === "mill" ? "milled" : opId === "wet_screen" ? "granules_wet" : "sieved";
+    lots = lots.map((lot) =>
+      machine.loadedLotIds.includes(lot.id)
+        ? { ...lot, kind, history: [...lot.history, { at: stamp, action: opId, detail: catalogId }] }
+        : lot,
+    );
+  }
+
   if (opId === "binder_solution" && loaded[0]) {
     lots = patchLot(lots, loaded[0].id, (lot) => ({ ...lot, kind: "binder_solution" }));
   }
@@ -960,13 +1090,33 @@ function finishMachine(
   if (opId === "wet_granulate" && loaded.length > 0) {
     const merged = loaded.slice(1).reduce((acc, lot) => mergeLots(acc, lot, stamp), loaded[0]);
     const kept = lots.filter((lot) => !machine.loadedLotIds.includes(lot.id));
-    lots = [...kept, { ...merged, kind: "wet_mass", moisturePercent: Math.max(merged.moisturePercent, 8) }];
+    const solvent = solventMass(merged.components);
+    const solids = solidsMass(merged.components);
+    lots = [
+      ...kept,
+      {
+        ...merged,
+        kind: "wet_mass",
+        moisturePercent: solvent > 0 ? roundTo((solvent / Math.max(solvent + solids, 0.0001)) * 100, 3) : merged.moisturePercent,
+      },
+    ];
   }
 
   if (opId === "dry") {
     lots = lots.map((lot) =>
       machine.loadedLotIds.includes(lot.id)
-        ? { ...lot, kind: "granules_dry", moisturePercent: state.recipe.targetLodPercent ?? 2 }
+        ? {
+            ...lot,
+            kind: "granules_dry",
+            history: [
+              ...lot.history,
+              {
+                at: stamp,
+                action: "dry",
+                detail: `training Lewis model, moisture ${lot.moisturePercent}% (not an oven measurement)`,
+              },
+            ],
+          }
         : lot,
     );
   }
@@ -977,32 +1127,43 @@ function finishMachine(
     );
   }
 
+  let summary = op ? `Завершено: ${op.title.ru}` : "Цикл завершён";
+
   if (opId === "encapsulate") {
     const blend = loaded.find((lot) => lot.kind === "final_blend" || lot.kind === "blend") ?? loaded[0];
-    const shells = lots.find((lot) => lot.components.some((part) => part.role === "capsule_shell"));
-    if (blend) {
-      const emptyCount = shells ? Math.floor((lotMass(shells) * 1000) / 76) : 0;
-      const yieldInfo = capsuleYield(blend, state.recipe.capsuleSize, emptyCount);
-      const kept = lots.filter((lot) => lot.id !== blend.id && lot.id !== shells?.id);
-      const leftover =
-        yieldInfo.leftoverG > 0.01
-          ? [{ ...blend, massG: yieldInfo.leftoverG, components: blend.components.map((part) => ({ ...part, massG: roundTo(part.massG * (yieldInfo.leftoverG / Math.max(lotMass(blend), 0.0001)), 4) })) }]
-          : [];
-      const capsules: MaterialLot = {
-        id: nid("lot"),
-        name: "Наполненные капсулы",
-        kind: "capsules",
-        massG: yieldInfo.usedBlendG,
-        moisturePercent: blend.moisturePercent,
-        bulkDensityGCm3: blend.bulkDensityGCm3,
-        components: compositionOf([blend]),
-        batchNo: blend.batchNo,
-        releaseStatus: "released",
-        place: { kind: "equipment", equipmentId: catalogId },
-        history: [{ at: stamp, action: "encapsulate", detail: `${yieldInfo.possible} caps × ${yieldInfo.fillMg} mg` }],
+    const shells = lots.find((lot) => lot.components.some((part) => part.role === "capsule_shell") && lot.kind !== "capsules");
+    const shellLine = state.recipe.lines.find((line) => line.role === "capsule_shell");
+    if (!blend || !shells || !shellLine) {
+      return {
+        lots: state.lots,
+        completed: state.completed,
+        activeOpId: null,
+        machine: { ...machine, phase: "error" as const, progress: 1, message: "Нет смеси или оболочек" },
+        op,
+        summary: "Наполнение не выполнено: нужны смесь и оболочки.",
       };
-      lots = [...kept, ...leftover, capsules];
     }
+    const filled = encapsulateBlend({
+      blend,
+      shells,
+      shellUnitG: shellLine.mgPerCapsule / 1000,
+      size: state.recipe.capsuleSize,
+      newId: nid("lot"),
+      at: stamp,
+    });
+    if (!filled.ok) {
+      return {
+        lots: state.lots,
+        completed: state.completed,
+        activeOpId: null,
+        machine: { ...machine, phase: "error" as const, progress: 1, message: filled.reason },
+        op,
+        summary: filled.reason === "no_shells" ? "Недостаточно оболочек для наполнения." : "Недостаточно смеси для наполнения.",
+      };
+    }
+    const kept = lots.filter((lot) => lot.id !== blend.id && lot.id !== shells.id);
+    lots = [...kept, ...(filled.leftoverBlend ? [filled.leftoverBlend] : []), ...(filled.leftoverShells ? [filled.leftoverShells] : []), filled.capsules];
+    summary = `Наполнено ${filled.yieldInfo.possible} капс. Масса наполнения ${filled.yieldInfo.usedBlendG} г, оболочки ${shellMass(filled.capsules.components)} г. Учебная модель плотности и объёма.`;
   }
 
   if (opId === "dedust_inspect") {
@@ -1019,6 +1180,7 @@ function finishMachine(
     activeOpId: null,
     machine: { ...machine, phase: "completed" as const, progress: 1, loadedLotIds: machine.loadedLotIds },
     op,
+    summary,
   };
 }
 

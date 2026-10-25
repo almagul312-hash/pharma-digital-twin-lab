@@ -180,6 +180,7 @@ export function RecipeEditor({ copy, locale }: { copy: SimCopy; locale: Locale }
             <dt className="text-muted">{copy.gap}</dt>
             <dd>
               {balance.gapG} g · {balance.explained}
+              {balance.solventRemovedG > 0 ? ` · ${copy.solventRemoved}: ${balance.solventRemovedG} g` : ""}
             </dd>
           </div>
         </dl>

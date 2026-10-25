@@ -65,10 +65,12 @@ const projected = new Vector3();
  * React 19, which tears down the canvas. This label is a plain DOM node in the
  * canvas parent, so a future GLB can keep the same call site.
  */
-export function EquipLabel({ label, y = 1.55 }: { label: string; y?: number }) {
+export function EquipLabel({ label, y = 1.55, visible = false }: { label: string; y?: number; visible?: boolean }) {
   const anchor = useRef<Group>(null);
   const node = useRef<HTMLDivElement | null>(null);
+  const visibleRef = useRef(visible);
   const { camera, gl, size } = useThree();
+  visibleRef.current = visible;
 
   useLayoutEffect(() => {
     const parent = gl.domElement.parentElement;
@@ -101,7 +103,8 @@ export function EquipLabel({ label, y = 1.55 }: { label: string; y?: number }) {
     const x = (projected.x * 0.5 + 0.5) * size.width;
     const yPx = (-projected.y * 0.5 + 0.5) * size.height;
     element.style.transform = `translate(${x}px, ${yPx}px) translate(-50%, -120%)`;
-    element.style.visibility = projected.z > 1 ? "hidden" : "visible";
+    const behind = projected.z > 1;
+    element.style.visibility = !visibleRef.current || behind ? "hidden" : "visible";
   });
 
   return <group ref={anchor} position={[0, y, 0]} />;

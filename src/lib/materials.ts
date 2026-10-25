@@ -23,6 +23,46 @@ export function compositionOf(lots: MaterialLot[]): LotComponent[] {
   return [...map.values()].map((item) => ({ ...item, massG: roundTo(item.massG, 4) }));
 }
 
+export function solventMass(components: LotComponent[]) {
+  return roundTo(
+    components.filter((item) => item.substanceId === "water" || item.role === "wetting").reduce((sum, item) => sum + item.massG, 0),
+    4,
+  );
+}
+
+export function solidsMass(components: LotComponent[]) {
+  return roundTo(
+    components
+      .filter((item) => item.substanceId !== "water" && item.role !== "wetting" && item.role !== "capsule_shell")
+      .reduce((sum, item) => sum + item.massG, 0),
+    4,
+  );
+}
+
+export function shellMass(components: LotComponent[]) {
+  return roundTo(components.filter((item) => item.role === "capsule_shell").reduce((sum, item) => sum + item.massG, 0), 4);
+}
+
+/** Shift the largest part so the component sum matches the stated mass. */
+export function reconcileMass(components: LotComponent[], massG: number) {
+  if (components.length === 0) {
+    return components;
+  }
+  const next = components.map((item) => ({ ...item, massG: roundTo(item.massG, 4) }));
+  const drift = roundTo(massG - next.reduce((sum, item) => sum + item.massG, 0), 4);
+  if (Math.abs(drift) < 0.00005) {
+    return next;
+  }
+  let index = 0;
+  for (let cursor = 1; cursor < next.length; cursor += 1) {
+    if (next[cursor].massG > next[index].massG) {
+      index = cursor;
+    }
+  }
+  next[index] = { ...next[index], massG: roundTo(next[index].massG + drift, 4) };
+  return next;
+}
+
 export function weightedMoisture(components: LotComponent[]) {
   const total = components.reduce((sum, item) => sum + item.massG, 0);
   if (total <= 0) {
@@ -30,7 +70,7 @@ export function weightedMoisture(components: LotComponent[]) {
   }
   let acc = 0;
   for (const part of components) {
-    const moisture = substanceById(part.substanceId)?.moisturePercent ?? 0;
+    const moisture = part.substanceId === "water" || part.role === "wetting" ? 100 : (substanceById(part.substanceId)?.moisturePercent ?? 0);
     acc += part.massG * moisture;
   }
   return roundTo(acc / total, 3);
@@ -67,14 +107,21 @@ export function splitLot(lot: MaterialLot, takeG: number, newId: string, at: str
     return { ok: false as const, reason: "invalid_split" };
   }
   const ratio = take / mass;
-  const takenComponents = lot.components.map((item) => ({
-    ...item,
-    massG: roundTo(item.massG * ratio, 4),
-  }));
-  const remainComponents = lot.components.map((item) => ({
-    ...item,
-    massG: roundTo(item.massG * (1 - ratio), 4),
-  }));
+  const remainMass = roundTo(mass - take, 4);
+  const takenComponents = reconcileMass(
+    lot.components.map((item) => ({
+      ...item,
+      massG: item.massG * ratio,
+    })),
+    take,
+  );
+  const remainComponents = reconcileMass(
+    lot.components.map((item) => ({
+      ...item,
+      massG: item.massG * (1 - ratio),
+    })),
+    remainMass,
+  );
   const taken: MaterialLot = {
     ...lot,
     id: newId,
@@ -88,7 +135,7 @@ export function splitLot(lot: MaterialLot, takeG: number, newId: string, at: str
   };
   const remaining: MaterialLot = {
     ...lot,
-    massG: roundTo(mass - take, 4),
+    massG: remainMass,
     components: remainComponents,
     history: [
       ...lot.history,
@@ -99,8 +146,8 @@ export function splitLot(lot: MaterialLot, takeG: number, newId: string, at: str
 }
 
 export function mergeLots(a: MaterialLot, b: MaterialLot, at: string): MaterialLot {
-  const components = compositionOf([a, b]);
   const massG = roundTo(lotMass(a) + lotMass(b), 4);
+  const components = reconcileMass(compositionOf([a, b]), massG);
   return {
     ...a,
     name: `${a.name} + ${b.name}`,

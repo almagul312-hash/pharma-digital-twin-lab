@@ -105,10 +105,20 @@ export function MaterialsDock({ copy, locale }: { copy: SimCopy; locale: Locale 
                 className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm font-normal"
                 defaultValue=""
                 onChange={(event) => {
-                  if (event.target.value) {
-                    mergeSelected(event.target.value);
-                    event.target.value = "";
+                  const value = event.target.value;
+                  if (!value) {
+                    return;
                   }
+                  const target = others.find((lot) => lot.id === value);
+                  const confirmed = window.confirm(
+                    target
+                      ? `Объединить «${selected.name}» и «${target.name}»? Массы сложатся, дублирования не будет.`
+                      : "Объединить порции?",
+                  );
+                  if (confirmed) {
+                    mergeSelected(value);
+                  }
+                  event.target.value = "";
                 }}
               >
                 <option value="">—</option>

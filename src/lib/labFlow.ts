@@ -6,6 +6,7 @@ import type {
   SampleStatus,
   ZoneId,
 } from "@/types/lab";
+import type { RouteId } from "@/types/process";
 
 export const SAMPLE_LOCATIONS: SampleLocation[] = [
   "warehouse",
@@ -86,26 +87,22 @@ export function withMark(sample: LabSample, mark: ProcessMark): LabSample {
   return { ...sample, marks: [...sample.marks, mark] };
 }
 
-export function nextLocation(sample: LabSample): SampleLocation {
+/**
+ * Legacy location hint. Milling, screening and desiccation are not required.
+ * Drying is required only on the wet-granulation route. The id `binder_oven`
+ * is the drying-cabinet location, not a binder-addition step.
+ */
+export function nextLocation(sample: LabSample, route: RouteId = "direct_blend"): SampleLocation {
   if (!sample.marks.includes("weighed")) {
     return "warehouse";
-  }
-  if (!sample.marks.includes("debagged") && !sample.marks.includes("milled")) {
-    return "warehouse";
-  }
-  if (!sample.marks.includes("milled")) {
-    return "dosing";
   }
   if (!sample.marks.includes("blended")) {
     return "blending";
   }
-  if (!sample.marks.includes("dried")) {
+  if (route === "wet_granulation" && !sample.marks.includes("dried")) {
     return "binder_oven";
   }
-  if (!sample.marks.includes("desiccated")) {
-    return "desiccator";
-  }
-  if (!sample.marks.includes("encapsulated") || !sample.marks.includes("dedusted")) {
+  if (!sample.marks.includes("encapsulated")) {
     return "encapsulation";
   }
   return "qc_lab";
