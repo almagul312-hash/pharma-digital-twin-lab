@@ -15,7 +15,7 @@ export const labRu: LabCopy = {
   start: "Приступить",
   startTitle: "Цифровой двойник и виртуальная лаборатория",
   startText:
-    "Откройте рабочий режим: склад и подготовка, цех капсулирования, сушка и эксикация, лаборатория контроля качества и автоматический журнал партии.",
+    "Откройте лабораторию: приёмка и взвешивание, смешивание или влажная грануляция, сушильный шкаф для гранулята, капсулирование, модельный контроль качества и журнал сессии.",
   structureTitle: "Состав виртуальной лаборатории",
   structureText:
     "Кнопка «Приступить» открывает цифровой двойник процесса. Показатели на рабочих экранах — учебная имитация и не заменяют нормативные результаты.",
@@ -64,21 +64,24 @@ export const labRu: LabCopy = {
   },
   zones: {
     warehouse: {
-      tab: "Склад и подготовка",
-      title: "Склад и подготовка",
-      subtitle: "Warehouse & Dosing — весы, растаривание, смеситель",
+      tab: "Склад и взвешивание",
+      title: "Склад и взвешивание",
+      subtitle: "Приёмка, идентификация, весы, сито и мельница",
+    },
+    process: {
+      tab: "Смешивание / грануляция",
+      title: "Смешивание и грануляция",
+      subtitle: "Сухие смесители и, при влажном маршруте, гранулятор",
     },
     encapsulation: {
       tab: "Цех капсулирования",
       title: "Цех капсулирования",
-      subtitle:
-        "Encapsulation Hall — автомат наполнения, обеспыливание и отбраковка",
+      subtitle: "Наполнение твёрдых капсул, обеспыливание, осмотр",
     },
-    binder: {
-      tab: "Сушка и эксикация",
-      title: "Сушка и эксикация",
-      subtitle:
-        "Binder & Desiccator Room — вакуумный шкаф Binder VD/VDL и эксикаторы",
+    drying: {
+      tab: "Сушильный шкаф",
+      title: "Сушка гранулята",
+      subtitle: "Конвективный или вакуумный шкаф. Не эксикатор",
     },
     qc: {
       tab: "Лаборатория КК",
@@ -299,19 +302,24 @@ export const labEn: LabCopy = {
   units,
   zones: {
     warehouse: {
-      tab: "Warehouse & dosing",
-      title: "Warehouse and preparation",
-      subtitle: "Scales, debagging, and mixer",
+      tab: "Warehouse & weighing",
+      title: "Warehouse and weighing",
+      subtitle: "Receipt, identification, balances, sieve and mill",
+    },
+    process: {
+      tab: "Blending / granulation",
+      title: "Blending and granulation",
+      subtitle: "Dry mixers and, on the wet route, the granulator",
     },
     encapsulation: {
       tab: "Encapsulation hall",
       title: "Encapsulation hall",
-      subtitle: "Capsule filler, dedusting, and rejection",
+      subtitle: "Filling hard capsules, dedusting, inspection",
     },
-    binder: {
-      tab: "Drying & desiccators",
-      title: "Drying and desiccation",
-      subtitle: "Binder VD/VDL vacuum oven and desiccators",
+    drying: {
+      tab: "Drying cabinet",
+      title: "Granule drying",
+      subtitle: "Convection or vacuum cabinet. Not a desiccator",
     },
     qc: {
       tab: "QC lab",
@@ -540,19 +548,24 @@ export const labKk: LabCopy = {
   },
   zones: {
     warehouse: {
-      tab: "Қойма және дайындау",
-      title: "Қойма және дайындау",
-      subtitle: "Таразы, ыдысты ашу, араластырғыш",
+      tab: "Қойма және өлшеу",
+      title: "Қойма және өлшеу",
+      subtitle: "Қабылдау, сәйкестендіру, таразы, елек және диірмен",
+    },
+    process: {
+      tab: "Араластыру / түйіршіктеу",
+      title: "Араластыру және түйіршіктеу",
+      subtitle: "Құрғақ араластырғыштар және ылғал маршрутында гранулятор",
     },
     encapsulation: {
       tab: "Капсулалау цехы",
       title: "Капсулалау цехы",
-      subtitle: "Толтыру автоматы, шаңсыздандыру және ақауды шығару",
+      subtitle: "Қатты капсулаларды толтыру, шаңсыздандыру, қарау",
     },
-    binder: {
-      tab: "Кептіру және эксикация",
-      title: "Кептіру және эксикация",
-      subtitle: "Binder VD/VDL вакуумдық шкафы және эксикаторлар",
+    drying: {
+      tab: "Кептіргіш шкаф",
+      title: "Түйіршікті кептіру",
+      subtitle: "Конвективті немесе вакуумдық шкаф. Эксикатор емес",
     },
     qc: {
       tab: "СБ зертханасы",

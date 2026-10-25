@@ -2,16 +2,17 @@
 
 import { Component, useEffect, useState, type ReactNode } from "react";
 import type { LabCanvas } from "@/components/capsules/scene/LabCanvas";
-import type { LabSceneProps } from "@/components/capsules/scene/types";
+import type { ZoneId } from "@/types/process";
 
 type CanvasComponent = typeof LabCanvas;
 
 export function LabViewport({
+  zone,
   hint,
   loading,
   error,
-  ...scene
-}: LabSceneProps & {
+}: {
+  zone: ZoneId;
   hint: string;
   loading: string;
   error: string;
@@ -21,7 +22,6 @@ export function LabViewport({
 
   useEffect(() => {
     let active = true;
-
     import("@/components/capsules/scene/LabCanvas")
       .then((mod) => {
         if (active) {
@@ -33,7 +33,6 @@ export function LabViewport({
           setFailed(true);
         }
       });
-
     return () => {
       active = false;
     };
@@ -41,14 +40,14 @@ export function LabViewport({
 
   return (
     <div>
-      <div className="relative h-[300px] overflow-hidden rounded-2xl border border-line bg-[#eef6f8] sm:h-[420px]">
+      <div className="relative h-[320px] overflow-hidden rounded-2xl border border-line bg-[#e8eef2] sm:h-[480px] lg:h-[560px]">
         <CanvasBoundary fallback={error}>
           {failed || !CanvasImpl ? (
             <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted">
               {failed ? error : loading}
             </div>
           ) : (
-            <CanvasImpl {...scene} />
+            <CanvasImpl zone={zone} />
           )}
         </CanvasBoundary>
       </div>
@@ -57,10 +56,7 @@ export function LabViewport({
   );
 }
 
-class CanvasBoundary extends Component<
-  { children: ReactNode; fallback: string },
-  { failed: boolean }
-> {
+class CanvasBoundary extends Component<{ children: ReactNode; fallback: string }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -75,7 +71,6 @@ class CanvasBoundary extends Component<
         </div>
       );
     }
-
     return this.props.children;
   }
 }

@@ -75,7 +75,7 @@ export function buildChromatogram(
     points.push({ x, y: round(Math.max(0, y), 2) });
   }
 
-  return { points, peaks, domain: [0, end] as [number, number] };
+  return { points, peaks, domain: [0, end] as [number, number], modelData: true as const };
 }
 
 export function buildFtir(seed: number) {
@@ -113,7 +113,7 @@ export function buildFtir(seed: number) {
     points.push({ x, y: round(Math.max(8, y), 1) });
   }
 
-  return { points, bands, domain: [4000, 600] as [number, number] };
+  return { points, bands, domain: [4000, 600] as [number, number], modelData: true as const };
 }
 
 export function buildUv(seed: number, apiConcentration: number) {
@@ -127,7 +127,7 @@ export function buildUv(seed: number, apiConcentration: number) {
     points.push({ x, y: round(y, 3) });
   }
 
-  return { points, peak, domain: [200, 400] as [number, number] };
+  return { points, peak, domain: [200, 400] as [number, number], modelData: true as const };
 }
 
 export function simulatePhyschem(sample: {
@@ -139,6 +139,7 @@ export function simulatePhyschem(sample: {
     disintegrationMin: round(6.5 + sample.moisture * 0.75, 1),
     hardnessN: round(88 - sample.moisture * 5.5 + sample.mass / 200, 1),
     residualMoisture: round(sample.moisture, 2),
+    modelData: true as const,
   };
 }
 
