@@ -1,6 +1,8 @@
+import type { ZoneId } from "@/types/process";
+
 export type ScreenMode = "menu" | "workspace";
 
-export type ZoneId = "warehouse" | "encapsulation" | "binder" | "qc" | "audit";
+export type { ZoneId };
 
 export type SampleLocation =
   | "warehouse"

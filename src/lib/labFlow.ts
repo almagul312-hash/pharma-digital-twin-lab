@@ -36,7 +36,7 @@ export function zoneFor(location: SampleLocation): ZoneId {
       return "encapsulation";
     case "binder_oven":
     case "desiccator":
-      return "binder";
+      return "drying";
     case "qc_lab":
       return "qc";
     default:

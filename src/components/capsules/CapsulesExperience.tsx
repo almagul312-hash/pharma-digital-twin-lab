@@ -49,7 +49,7 @@ export function CapsulesExperience({
   }
 
   if (screen === "workspace") {
-    return <DigitalTwinWorkspace copy={lab} onBack={returnToMenu} />;
+    return <DigitalTwinWorkspace copy={lab} locale={locale} onBack={returnToMenu} />;
   }
 
   return (
